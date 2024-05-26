@@ -11,7 +11,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 random.seed(777)
 torch.manual_seed(777)
@@ -22,16 +21,16 @@ if device == 'cuda':
 
 # Coordinates shift =======================================================
 def loc_zero_mod(loc_data, domain_mean): # 가장 기본 형태, 필요에 따라 디벨롭
-    return loc_data - domain_mean1
+    return loc_data - domain_mean
 
 def loc_zero_demod(loc_data, domain_mean):
     return loc_data + domain_mean
 
-df = pd.read_csv('HW/data/AP/filtered_distance.csv')
-loc = pd.read_csv('HW/data/AP/groundtruth.csv')
+df = pd.read_csv('UWB_Positioning/HW/data/AP/filtered_distance.csv')
+loc = pd.read_csv('UWB_Positioning/HW/data/AP/groundtruth.csv')
 
-hw_df = pd.read_csv('HW/data/AP/outlier_dist.csv')
-hw_loc = pd.read_csv('HW/data/AP/outlier_coor.csv')
+hw_df = pd.read_csv('UWB_Positioning/HW/data/raw/TOA.csv')
+hw_loc = pd.read_csv('UWB_Positioning/HW/data/raw/location.csv')
 
 anchor = [(0.00,0.00), (0.00,6.48), (4.00,0.00), (4.00,6.48)]
 
@@ -40,41 +39,27 @@ domain_mean = np.mean(anchor, axis=0)
 x_data = df.values
 y_data = loc.values
 
-hw_df = hw_df / (3.0*(10**8))
-hw_x = hw_df.values
-hw_y = hw_loc.values
-hw_y = hw_y[:,:2]
+# hw_df = hw_df / (3.0*(10**8))
+hw_x = hw_df.values[:244,:]
+hw_y = hw_loc.values[:244,:2]
 
-tag_anchor = [(0.00,0.00), (0.00,6.48), (4.00,0.00), (4.00,6.48)]
+tag_anchor = [(0.00,0.00), (0.00,6.48), (4.00,0.00), (4.00,6.48)] # HW Anchor 좌표 수정
 
 test_mean = np.mean(tag_anchor, axis=0)
 
-# Data Preprocessing ===========================================================
+# Data Preprocessing ===================================================================
 
 # 데이터 스케일링
 scaler = MinMaxScaler()
-y_data_mod = loc_zero_mod(loc.values, domain_mean)
-x_scaled = scaler.fit_transform(x_data)
-y_scaled = scaler.fit_transform(y_data_mod)
 
 hw_loc_mod = loc_zero_mod(hw_y, test_mean)
 hw_x_scaled = scaler.fit_transform(hw_x)
 hw_y_scaled = scaler.fit_transform(hw_loc_mod)
 
-x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_scaled, test_size=0.2, random_state=42)
-
-# Convert data to PyTorch tensors    
-x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
-y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
-# y_train_tensor = torch.tensor(y_train[:, :2], dtype=torch.float32)  # z 좌표를 제외한 x, y 좌표만 선택
-x_test_tensor = torch.tensor(x_test, dtype=torch.float32)
-y_test_tensor = torch.tensor(y_test, dtype=torch.float32)
-# y_test_tensor = torch.tensor(y_test[:, :2], dtype=torch.float32)  # z 좌표를 제외한 x, y 좌표만 선택
-
 hw_test_x = torch.tensor(hw_x_scaled, dtype=torch.float32)
 hw_test_y = torch.tensor(hw_y_scaled, dtype=torch.float32)
 
-# ML : Model & Parameters Define ========================================================
+# ML : Model & Parameters Define =======================================================
 
 # Define the DNN model ===============================================
 class DNN(nn.Module):
@@ -91,21 +76,20 @@ class DNN(nn.Module):
         return out
 
 # Define hyperparameters
-input_size = x_train.shape[1]
+input_size = hw_test_x.shape[1]
 hidden_size = 128 
-output_size = y_train_tensor.shape[1]  # 출력 크기도 변경
+output_size = hw_test_y.shape[1]  # 출력 크기도 변경
 num_epochs = 1000
 batch_size = 64
 learning_rate = 0.001
 
 # Create DataLoader
-train_loader = DataLoader(TensorDataset(x_train_tensor, y_train_tensor), batch_size=batch_size, shuffle=False)
 # test_loader = DataLoader(TensorDataset(x_test_tensor, y_test_tensor), batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(TensorDataset(hw_test_x, hw_test_y), batch_size=batch_size, shuffle=False)
 
 # 모델 불러오기
 model = DNN(input_size, hidden_size, output_size)
-model.load_state_dict(torch.load('hw_model.pth'))
+model.load_state_dict(torch.load('UWB_Positioning/HW/hw_filtered_dnn.pth'))
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -146,7 +130,7 @@ print("min: ", np.min(mse_values))
 
 # 결과 데이터 - Matlab으로 GT랑 MSE 계산해서 HW랑 성능 비교
 result = pd.DataFrame(all_predictions, columns=['x', 'y'])
-result.to_csv('HW/data/dnn_pred_coor.csv', index=False)
+result.to_csv('UWB_Positioning/HW/data/dnn_pred_coor.csv', index=False)
 
 # result.to_excel('추출된_데이터.xlsx', index=False)
 # result.scipy.io.savemat('EEG_data.mat')#, {'struct':result.to_dict("list")})

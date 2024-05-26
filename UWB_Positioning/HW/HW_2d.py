@@ -38,8 +38,8 @@ def classify_toa_sign(ToA_data, tag_z):
 
 #==========================================================================
 
-df = pd.read_csv('HW/data/AP/filtered_distance.csv')
-loc = pd.read_csv('HW/data/AP/groundtruth.csv')
+df = pd.read_csv('UWB_Positioning/HW/data/AP/filtered_distance.csv')
+loc = pd.read_csv('UWB_Positioning/HW/data/AP/groundtruth.csv')
 
 # hw_df = pd.read_csv('HW/data/new_hw/TOA.csv')
 # hw_loc = pd.read_csv('HW/data/new_hw/location.csv')
@@ -84,8 +84,8 @@ y_test_tensor = torch.tensor(y_test, dtype=torch.float32)
 x_test_df = pd.DataFrame(x_test, columns=[f'Feature_{i}' for i in range(x_test.shape[1])])
 y_test_df = pd.DataFrame(y_test, columns=['Label_X', 'Label_Y'])
 
-x_test_df.to_csv('x_test.csv', index=False)
-y_test_df.to_csv('y_test.csv', index=False)
+x_test_df.to_csv('UWB_Positioning/HW/data/testsets/x_test.csv', index=False)
+y_test_df.to_csv('UWB_Positioning/HW/data/testsets/y_test.csv', index=False)
 
 
 # hw_test_x = torch.tensor(hw_x_scaled, dtype=torch.float32)
@@ -156,7 +156,7 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch+1}/{num_epochs}], Test Loss: {test_loss:.8f}')
 
 # model 데이터따라 다르게 저장하기
-torch.save(model.state_dict(), 'HW/hw_dnn_model.pth')
+torch.save(model.state_dict(), 'UWB_Positioning/HW/hw_filtered_dnn.pth')
 
 plt.plot(train_losses, label='Train Loss')
 plt.plot(test_losses, label='Test Loss')
