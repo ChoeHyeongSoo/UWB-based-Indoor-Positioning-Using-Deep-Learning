@@ -38,8 +38,8 @@ def classify_toa_sign(ToA_data, tag_z):
 
 #==========================================================================
 
-df = pd.read_csv('UWB_Positioning/HW/data/AP/filtered_distance.csv')
-loc = pd.read_csv('UWB_Positioning/HW/data/AP/groundtruth.csv')
+df = pd.read_csv('UWB_Positioning/HW/data/raw/TOA.csv')
+loc = pd.read_csv('UWB_Positioning/HW/data/AP/groundtruth_total.csv')
 
 # hw_df = pd.read_csv('HW/data/new_hw/TOA.csv')
 # hw_loc = pd.read_csv('HW/data/new_hw/location.csv')
@@ -63,29 +63,25 @@ test_mean = np.mean(tag_anchor, axis=0)
 
 # 데이터 스케일링
 scaler = MinMaxScaler()
+x_data = x_data / (3.0*(10**8))
 y_data_mod = loc_zero_mod(loc.values, domain_mean)
 x_scaled = scaler.fit_transform(x_data)
 y_scaled = scaler.fit_transform(y_data_mod)
-
-# hw_loc_mod = loc_zero_mod(hw_y, test_mean)
-# hw_x_scaled = scaler.fit_transform(hw_x)
-# hw_y_scaled = scaler.fit_transform(hw_loc_mod)
 
 x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_scaled, test_size=0.2, random_state=42)
    
 x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
-# y_train_tensor = torch.tensor(y_train[:, :2], dtype=torch.float32)  # z 좌표를 제외한 x, y 좌표만 선택
+
 x_test_tensor = torch.tensor(x_test, dtype=torch.float32)
 y_test_tensor = torch.tensor(y_test, dtype=torch.float32)
-# y_test_tensor = torch.tensor(y_test[:, :2], dtype=torch.float32)  # z 좌표를 제외한 x, y 좌표만 선택
 
 # test_tensor Extraction : Trilateration&HW 모두 비교하게 추출 - Matlab으로 이거 사용해
 x_test_df = pd.DataFrame(x_test, columns=[f'Feature_{i}' for i in range(x_test.shape[1])])
 y_test_df = pd.DataFrame(y_test, columns=['Label_X', 'Label_Y'])
 
-x_test_df.to_csv('UWB_Positioning/HW/data/testsets/x_test.csv', index=False)
-y_test_df.to_csv('UWB_Positioning/HW/data/testsets/y_test.csv', index=False)
+x_test_df.to_csv('UWB_Positioning/HW/data/testsets/x_test_total.csv', index=False)
+y_test_df.to_csv('UWB_Positioning/HW/data/testsets/y_test_total.csv', index=False)
 
 
 # hw_test_x = torch.tensor(hw_x_scaled, dtype=torch.float32)
@@ -156,7 +152,7 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch+1}/{num_epochs}], Test Loss: {test_loss:.8f}')
 
 # model 데이터따라 다르게 저장하기
-torch.save(model.state_dict(), 'UWB_Positioning/HW/hw_filtered_dnn.pth')
+torch.save(model.state_dict(), 'UWB_Positioning/HW/hw_total_dnn.pth')
 
 plt.plot(train_losses, label='Train Loss')
 plt.plot(test_losses, label='Test Loss')

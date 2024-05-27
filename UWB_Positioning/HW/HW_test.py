@@ -39,9 +39,9 @@ domain_mean = np.mean(anchor, axis=0)
 x_data = df.values
 y_data = loc.values
 
-# hw_df = hw_df / (3.0*(10**8))
-hw_x = hw_df.values[:244,:]
-hw_y = hw_loc.values[:244,:2]
+hw_df = hw_df / (3.0*(10**8))
+hw_x = hw_df.values[:250,:]
+hw_y = hw_loc.values[:250,:2]
 
 tag_anchor = [(0.00,0.00), (0.00,6.48), (4.00,0.00), (4.00,6.48)] # HW Anchor 좌표 수정
 
@@ -130,7 +130,7 @@ print("min: ", np.min(mse_values))
 
 # 결과 데이터 - Matlab으로 GT랑 MSE 계산해서 HW랑 성능 비교
 result = pd.DataFrame(all_predictions, columns=['x', 'y'])
-result.to_csv('UWB_Positioning/HW/data/dnn_pred_coor.csv', index=False)
+result.to_csv('UWB_Positioning/HW/data/total_dnn_pred_coor.csv', index=False)
 
 # result.to_excel('추출된_데이터.xlsx', index=False)
 # result.scipy.io.savemat('EEG_data.mat')#, {'struct':result.to_dict("list")})
