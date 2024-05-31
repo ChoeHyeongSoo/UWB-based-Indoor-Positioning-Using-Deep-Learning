@@ -64,6 +64,7 @@ test_mean = np.mean(tag_anchor, axis=0)
 # 데이터 스케일링
 scaler = MinMaxScaler()
 y_data_mod = loc_zero_mod(loc.values, domain_mean)
+x_data = x_data / 3e8 
 x_scaled = scaler.fit_transform(x_data)
 y_scaled = scaler.fit_transform(y_data_mod)
 
@@ -75,10 +76,10 @@ x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_scaled, test_siz
    
 x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
-# y_train_tensor = torch.tensor(y_train[:, :2], dtype=torch.float32)  # z 좌표를 제외한 x, y 좌표만 선택
+
 x_test_tensor = torch.tensor(x_test, dtype=torch.float32)
 y_test_tensor = torch.tensor(y_test, dtype=torch.float32)
-# y_test_tensor = torch.tensor(y_test[:, :2], dtype=torch.float32)  # z 좌표를 제외한 x, y 좌표만 선택
+
 
 # test_tensor Extraction : Trilateration&HW 모두 비교하게 추출 - Matlab으로 이거 사용해
 x_test_df = pd.DataFrame(x_test, columns=[f'Feature_{i}' for i in range(x_test.shape[1])])

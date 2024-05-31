@@ -17,7 +17,46 @@ torch.manual_seed(777)
 if device == 'cuda':
     torch.cuda.manual_seed_all(777)
 
-# Data Preprocess Function===========================================================
+# Data Preprocess Function ===========================================================
+
+# Ground Truth 각 포인트
+rectangle_points = np.array([
+    [0.9663, 4.62724],  # Point 1
+    [0.9663, 1.61536],   # Point 2
+    [3.0635, 1.61536],    # Point 3
+    [3.0635, 4.62724]    # Point 4
+])
+
+# GT 세그먼트 함수
+def point_to_line_dist(point, line):
+    x0, y0 = point
+    (x1, y1), (x2, y2) = line
+
+    dx, dy = x2 - x1, y2 - y1
+    if dx == dy == 0:
+        return np.hypot(x0 - x1, y0 - y1), (x1, y1)
+
+    t = ((x0 - x1) * dx + (y0 - y1) * dy) / (dx * dx + dy * dy)
+    if t < 0:
+        nearest = (x1, y1)
+    elif t > 1:
+        nearest = (x2, y2)
+    else:
+        nearest = (x1 + t * dx, y1 + t * dy)
+    
+    return np.hypot(x0 - nearest[0], y0 - nearest[1]), nearest
+
+# Prediction이랑 GT 최단거리
+def point_nearest_rectangle(point, rectangle_points):
+    min_distance = float('inf')
+    nearest_point = None
+    for i in range(len(rectangle_points)):
+        line = (rectangle_points[i], rectangle_points[(i + 1) % len(rectangle_points)])
+        distance, nearest = point_to_line_dist(point, line)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_point = nearest
+    return min_distance, nearest_point
 
 # Coordinates shift =======================================================
 def loc_zero_mod(loc_data, domain_mean): # 가장 기본 형태, 필요에 따라 디벨롭
@@ -40,8 +79,8 @@ x_data = df.values
 y_data = loc.values
 
 # hw_df = hw_df / (3.0*(10**8))
-hw_x = hw_df.values[:244,:]
-hw_y = hw_loc.values[:244,:2]
+hw_x = hw_df.values[:250,:]
+hw_y = hw_loc.values[:250,:2]
 
 tag_anchor = [(0.00,0.00), (0.00,6.48), (4.00,0.00), (4.00,6.48)] # HW Anchor 좌표 수정
 
@@ -53,6 +92,7 @@ test_mean = np.mean(tag_anchor, axis=0)
 scaler = MinMaxScaler()
 
 hw_loc_mod = loc_zero_mod(hw_y, test_mean)
+hw_x = hw_x / 3e8
 hw_x_scaled = scaler.fit_transform(hw_x)
 hw_y_scaled = scaler.fit_transform(hw_loc_mod)
 
@@ -134,3 +174,23 @@ result.to_csv('UWB_Positioning/HW/data/dnn_pred_coor.csv', index=False)
 
 # result.to_excel('추출된_데이터.xlsx', index=False)
 # result.scipy.io.savemat('EEG_data.mat')#, {'struct':result.to_dict("list")})
+
+mse_list = []
+for pred in all_predictions:
+    min_dist, _ = point_nearest_rectangle(pred[:2], rectangle_points)
+    mse_list.append(min_dist ** 2)
+
+mean_mse = np.mean(mse_list)
+print("Mean MSE Value:", mean_mse)
+
+all_predictions = np.array(all_predictions)
+
+plt.figure(figsize=(8, 8))
+plt.plot(rectangle_points[:, 0], rectangle_points[:, 1], 'r-', label='Rectangle')
+plt.scatter(all_predictions[:, 0], all_predictions[:, 1], c='g', label='Predicted Path', s=10)
+plt.title('Predicted Path with Rectangle')
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.legend()
+plt.grid(True)
+plt.show()
