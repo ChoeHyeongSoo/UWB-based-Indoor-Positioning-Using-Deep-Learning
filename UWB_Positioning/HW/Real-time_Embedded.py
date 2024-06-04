@@ -82,7 +82,7 @@ def readthread(ser, model):
             res = ser.readline().decode('utf-8', errors='ignore')
             c4a7, _1374, _116D, _1104, _est = extract_data(res)
             if c4a7 and _1374 and _116D and _1104:
-                try:
+                try: # 거리-ToA 모델 변환
                     c4a7 = float(c4a7) / 3e8
                     _1374 = float(_1374) / 3e8
                     _116D = float(_116D) / 3e8
