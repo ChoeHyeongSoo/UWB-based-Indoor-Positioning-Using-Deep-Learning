@@ -8,7 +8,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
-# Device configuration
+# Device configuration : LAB cuda 위 - 개인 device=cpu
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Serial port configuration
@@ -16,7 +16,6 @@ port = "COM4"
 baud = 115200
 ser = serial.Serial(port, baud, timeout=1)
 
-# Define LSTM model with 2 layers, dropout, and TimeDistributed(Dense)
 class LSTMModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers=2, dropout_prob=0.5):
         super(LSTMModel, self).__init__()
@@ -45,11 +44,10 @@ learning_rate = 0.001
 
 model = LSTMModel(input_size, hidden_size, output_size, num_layers).to(device)
 model.load_state_dict(torch.load('lstm_model.pth'))
-
-# Loss and optimizer
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+# DWM-1000 Module Linux data process ==========================================
 def extract_data(line):
     # Define patterns to extract specific data
     pattern1 = r'C4A7\[0.00,6.48,2.02\]=(.*?) '
@@ -85,20 +83,17 @@ def readthread(ser, model):
             c4a7, _1374, _116D, _1104, _est = extract_data(res)
             if c4a7 and _1374 and _116D and _1104:
                 try:
-                    # Parse the data to float
                     c4a7 = float(c4a7)
                     _1374 = float(_1374)
                     _116D = float(_116D)
                     _1104 = float(_1104)
                     
-                    # Add the new data to the buffer
                     data_buffer.append([_116D, c4a7, _1104, _1374])
-
-                    # Keep only the last seq_length elements
+                    
                     if len(data_buffer) > seq_length:
                         data_buffer.pop(0)
                     
-                    # If the buffer has enough data, make a prediction
+                    # seq_length 만족하면 테스트 시작
                     if len(data_buffer) == seq_length:
                         input_data = torch.tensor([data_buffer], dtype=torch.float32).to(device)
                         model.eval()
@@ -117,7 +112,13 @@ def main():
 
 if __name__ == "__main__":
     main()
-
+    
+"""
 # 결과 좌표 inverse_transform
 
 # 입력 (거리) -> ToA 변환하기
+
+# HW 예측좌표 - 모델 예측좌표 비교할 수 있게
+
+Plot으로 비교한 거 보이게 하면 좋음 !
+"""
