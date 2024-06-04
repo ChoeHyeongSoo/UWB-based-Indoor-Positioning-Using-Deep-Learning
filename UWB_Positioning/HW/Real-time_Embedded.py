@@ -99,7 +99,8 @@ def readthread(ser, model):
                         model.eval()
                         with torch.no_grad():
                             output = model(input_data)
-                            x, y = output[0].cpu().numpy()
+                            output = StandardScaler.inverse_transform(output.detach.cpu().numpy())
+                            x, y = output[0] # 측정 좌표 plot으로 정확도 확인
                         
                         print(f"Predicted Coordinates: X={x:.2f}, Y={y:.2f}")
                 except Exception as e:
@@ -115,6 +116,7 @@ if __name__ == "__main__":
     
 """
 # 결과 좌표 inverse_transform
+# 1) inverse 자체를 안 하고 학습 / 2) inverse 파라미터만 넘겨와서 시리얼 통신
 
 # 입력 (거리) -> ToA 변환하기
 
