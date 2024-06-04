@@ -104,12 +104,10 @@ num_epochs = 100
 learning_rate = 0.001
 
 model = LSTMModel(input_size, hidden_size, output_size, num_layers).to(device)
-
-# Loss and optimizer
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-# Train the model
+# Train ========================================
 for epoch in range(num_epochs):
     model.train()
     for inputs, targets in train_loader:
